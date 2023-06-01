@@ -37,6 +37,5 @@ url_signer = URLSigner(session)
 @action.uses('index.html', db, auth, url_signer)
 def index():
     return dict(
-        # COMPLETE: return here any signed URLs you need.
-        my_callback_url = URL('my_callback', signer=url_signer),
+        # deleteFav_url=URL("deleteFav", signer=url_signer),
     )
