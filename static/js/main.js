@@ -10,7 +10,7 @@ import Earth from './earth.js';
 const textureLoader = new THREE.TextureLoader();
 const normalTexture = textureLoader.load('./imgs/fullNormal.jfif');
 const earthTexture = textureLoader.load('./imgs/ULQColor_edit.jpg');
-const UVmap = textureLoader.load('./imgs/UVmap.png');
+// const UVmap = textureLoader.load('./imgs/UVmap.png');
 // console.log(earthTexture)
 
 
@@ -22,7 +22,7 @@ const scene = new THREE.Scene();
 
 // Materials
 const earthMat = new THREE.MeshStandardMaterial({
-    normalMap: normalTexture,
+    // normalMap: normalTexture,
     map: earthTexture
 });
 
@@ -30,7 +30,7 @@ const basicMat = new THREE.MeshBasicMaterial({
     map: earthTexture
 });
 
-const rad = 1, res = 100;
+const rad = 1, res = 1000;
 const earth = new Earth(rad, res, new THREE.Vector3(0, 0, 0));
 const earthGroup = new THREE.Group();
 
@@ -46,26 +46,31 @@ for(let i=0; i<6; i++) {
     geometry[i].setAttribute( 'uv', new THREE.Float32BufferAttribute(earth.faces[i].uvs, 2, res * res * 6));
     // console.log(geometry[i])
 
-    // const wireframe = new THREE.WireframeGeometry( geometry[i] )
-    // const line = new THREE.LineSegments( wireframe )
-    // line.material.depthTest = false
-    // line.material.opacity = 0.25
-    // line.material.transparent = true
-    // earthGroup.add(line)
+    // const wireframe = new THREE.WireframeGeometry( geometry[i] );
+    // const line = new THREE.LineSegments( wireframe );
+    // line.material.depthTest = false;
+    // line.material.opacity = 0.25;
+    // line.material.transparent = true;
+    // earthGroup.add(line);
 
 }
 let singleGeometry = BufferGeometryUtils.mergeGeometries(geometry);
-// const singleMesh = new THREE.Mesh(singleGeometry, earthMat);
-const singleMesh = new THREE.Mesh(singleGeometry, basicMat);
+const singleMesh = new THREE.Mesh(singleGeometry, earthMat);
+// const singleMesh = new THREE.Mesh(singleGeometry, basicMat);
 earthGroup.add(singleMesh);
 // console.log(earthGroup)
 
 scene.add(earthGroup);
 
 // Lights
-const pointLight = new THREE.PointLight(0xffffff, 5, 10);
-pointLight.position.set(-3.2, 2, 7.5);
-scene.add(pointLight);
+// const pointLight = new THREE.PointLight(0xffffff, 5, 15);
+// pointLight.position.set(-3.2, 2, 8);
+// scene.add(pointLight);
+
+const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+dirLight.position.set(-.7, .2, 0.6);
+// dirLight.castShadow = true;
+scene.add(dirLight);
 
 let screenWidth = window.innerWidth;
 let screenHeight = window.innerHeight;
@@ -89,7 +94,7 @@ window.addEventListener('resize', () =>
 const camera = new THREE.PerspectiveCamera(75, screenWidth / screenHeight, 0.1, 100);
 camera.position.x = 0;
 camera.position.y = 0;
-camera.position.z = 4;
+camera.position.z = 2;
 scene.add(camera);
 
 // Controls
