@@ -37,5 +37,5 @@ url_signer = URLSigner(session)
 @action.uses('index.html', db, auth, url_signer)
 def index():
     return dict(
-        # deleteFav_url=URL("deleteFav", signer=url_signer),
+        writeToFile_url=URL("writeToFile", signer=url_signer),
     )

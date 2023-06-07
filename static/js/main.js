@@ -8,22 +8,25 @@ import Earth from './earth.js';
 
 // Loading
 const textureLoader = new THREE.TextureLoader();
-const normalTexture = textureLoader.load('./imgs/fullNormal.jfif');
+const normalTexture = textureLoader.load('./imgs/normalMap16kFlat.jpg');
+
+
 const earthTexture = textureLoader.load('./imgs/ULQColor_edit.jpg');
+// const earthTexture = textureLoader.load('./imgs/color21600.png');
+
 // const UVmap = textureLoader.load('./imgs/UVmap.png');
-// console.log(earthTexture)
 
-
-// Canvas
 const canvas = document.querySelector('canvas');
 
-// Scene
 const scene = new THREE.Scene();
 
 // Materials
 const earthMat = new THREE.MeshStandardMaterial({
-    // normalMap: normalTexture,
-    map: earthTexture
+    map: earthTexture,
+    normalMap: normalTexture,
+    normalScale: new THREE.Vector2(3, 3),
+    roughness: 0.4,
+    // metalness: 0.1,
 });
 
 const basicMat = new THREE.MeshBasicMaterial({
@@ -40,11 +43,8 @@ for(let i=0; i<6; i++) {
     geometry[i].setIndex(earth.faces[i].indices);
     geometry[i].setAttribute( 'position', new THREE.Float32BufferAttribute(earth.faces[i].vertices, 3) );
 
-    geometry[i].computeVertexNormals();
 
-    // geometry[i].normalizeNormals()
     geometry[i].setAttribute( 'uv', new THREE.Float32BufferAttribute(earth.faces[i].uvs, 2, res * res * 6));
-    // console.log(geometry[i])
 
     // const wireframe = new THREE.WireframeGeometry( geometry[i] );
     // const line = new THREE.LineSegments( wireframe );
@@ -54,7 +54,13 @@ for(let i=0; i<6; i++) {
     // earthGroup.add(line);
 
 }
+
 let singleGeometry = BufferGeometryUtils.mergeGeometries(geometry);
+singleGeometry.computeVertexNormals();
+// singleGeometry.normalizeNormals();
+// let earthJSON = singleGeometry.toJSON();
+// console.log(earthJSON);
+
 const singleMesh = new THREE.Mesh(singleGeometry, earthMat);
 // const singleMesh = new THREE.Mesh(singleGeometry, basicMat);
 earthGroup.add(singleMesh);
@@ -68,7 +74,7 @@ scene.add(earthGroup);
 // scene.add(pointLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-dirLight.position.set(-.7, .2, 0.6);
+dirLight.position.set(-.7, -.1, 0.6);
 // dirLight.castShadow = true;
 scene.add(dirLight);
 
@@ -95,11 +101,16 @@ const camera = new THREE.PerspectiveCamera(75, screenWidth / screenHeight, 0.1, 
 camera.position.x = 0;
 camera.position.y = 0;
 camera.position.z = 2;
+camera.near = 0.01;
+camera.updateProjectionMatrix();
 scene.add(camera);
 
 // Controls
-const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.maxDistance = 4;
+controls.minDistance = 1.15;
+controls.zoomSpeed = 0.05;
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({

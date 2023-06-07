@@ -3,21 +3,13 @@ import { Vector2 } from 'three'
 // import * as THREE from 'three';
 import data from '../data/heightData4096.json' assert { type: 'json' };
 
-
 export default class Earth {
     constructor(radius, resolution, position) {
         this.radius = radius;
         this.resolution = resolution;
         this.position = position;
         this.faces = [];
-
-		// fetch('https://server.com/data.json')
-		// .then((response) => response.json())
-		// .then((json) => console.log(json));
 		
-		// heightData = JSON.parse(data);
-		// console.log(data);
-
         // normal for each face     front, back, right, left, top, bottom
         const normals = [new Vector3(0, 0, 1), 
             new Vector3(0, 0, -1), 
@@ -83,8 +75,8 @@ class PlanetFace {
 				if(x == data.length) { x=0; }
 				if(y == data.length/2) { y=0; }
 
-				let heightMult = 0.03;
-				let vertexHeight = radius + data[x][y] / 255 * heightMult;
+				let heightMult = 0.02;
+				let vertexHeight = radius + data[x][y] / 61826 * heightMult;
 
                 currentVertex.multiplyScalar(vertexHeight);
 
