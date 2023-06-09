@@ -1,5 +1,5 @@
-// import { Vector3 } from 'three';
-// import { Vector2 } from 'three';
+import { Vector3 } from 'three';
+import { Vector2 } from 'three';
 // import * as THREE from 'three';
 import data from '../data/heightData4096.json' assert { type: 'json' };
 
@@ -56,17 +56,12 @@ export class Earth {
 }
 
 // builds each face
-export class PlanetFace {
-    constructor(radius, resolution, normal, axisA, axisB, cornerPoint, parentLOD) {
-        if(radius == undefined) {
-            return this;
-        }
+class PlanetFace {
+    constructor(radius, resolution, normal, axisA, axisB, cornerPoint, pLOD) {
         this.vertices = [];
         //array storing UV coordinates
         this.uvs = [];
-        //face is on z = 0 line
         this.indices = [];
-
         this.normal = normal;
         this.axisA = axisA;
         this.axisB = axisB;
@@ -75,12 +70,7 @@ export class PlanetFace {
 
         // higher level means vertices span shorter distance
         this.lodLevel = 1;
-        if(parentLOD != undefined) { this.lodLevel = parentLOD * 2; }
-
-        // horizontal and vertical axes of plane
-        // const axisA = axesAndCorner[0];
-        // const axisB = axesAndCorner[1];
-        // const cornerPoint = axesAndCorner[2];
+        if(pLOD != undefined) { this.lodLevel = pLOD * 2; }
 
         // generate vertices, start at corner point then build along axis a then b
         for(let j=0; j <= resolution; j++) 
@@ -165,86 +155,15 @@ export class PlanetFace {
     static pointOnSphereToUV(p) {
         const v = 0.5 + (Math.asin(p.y) / Math.PI);
         const u = 0.5 - (Math.atan2(p.z, p.x) / (2 * Math.PI));
-        return new Vector3(u, v);
+        return new Vector2(u, v);
     }
 }
 
-export function jsonToFace(json) {
-    let face = new PlanetFace();
-    face.vertices = json['vertices'];
-    face.uvs = json['uvs'];
-    face.indices = json['indices'];
-    face.normal = json['vertices'];
-    face.axisA = json['axisA'];
-    face.axisB = json['axisV'];
-    face.cornerPoint = json['cornerPoint'];
-    face.centerPos = json['centerPos'];
-    face.lodLevel = json['lodLevel'];
-    return face;
-}
-
-export function splitFace(parentFaceJson, rad, res) {
-    let pNormal = parentFaceJson['normal'];
-    let pAxisA = parentFaceJson['axisA'];
-    let pAxisB = parentFaceJson['axisB'];
-    let pCornerPoint = parentFaceJson['cornerPoint'];
-    let pLOD = parentFaceJson['lodLevel'];
-
-    pNormal = new Vector3(pNormal.x, pNormal.y, pNormal.z);
-    pAxisA = new Vector3(pAxisA.x, pAxisA.y, pAxisA.z);
-    pAxisB = new Vector3(pAxisB.x, pAxisB.y, pAxisB.z);
-    pCornerPoint = new Vector3(pCornerPoint.x, pCornerPoint.y, pCornerPoint.z);
-
-    const face0 = new PlanetFace(rad, res, pNormal, pAxisA, pAxisB, pCornerPoint, pLOD);
-    const face1 = new PlanetFace(rad, res, pNormal, pAxisA, pAxisB, pCornerPoint.clone().add(pAxisA.clone().multiplyScalar(1/pLOD)), pLOD);
-    const face2 = new PlanetFace(rad, res, pNormal, pAxisA, pAxisB, pCornerPoint.clone().add(pAxisB.clone().multiplyScalar(1/pLOD)), pLOD);
-    const face3 = new PlanetFace(rad, res, pNormal, pAxisA, pAxisB, pCornerPoint.clone().add(pAxisA.clone().multiplyScalar(1/pLOD)).add(pAxisB.clone().multiplyScalar(1/pLOD)), pLOD);
+export function splitFace(parentFace, rad, res) {
+    const pLOD = parentFace.lodLevel;
+    const face0 = new PlanetFace(rad, res, parentFace.normal, parentFace.axisA, parentFace.axisB, parentFace.cornerPoint, pLOD);
+    const face1 = new PlanetFace(rad, res, parentFace.normal, parentFace.axisA, parentFace.axisB, parentFace.cornerPoint.clone().add(parentFace.axisA.clone().multiplyScalar(1/parentFace.lodLevel)), pLOD);
+    const face2 = new PlanetFace(rad, res, parentFace.normal, parentFace.axisA, parentFace.axisB, parentFace.cornerPoint.clone().add(parentFace.axisB.clone().multiplyScalar(1/parentFace.lodLevel)), pLOD);
+    const face3 = new PlanetFace(rad, res, parentFace.normal, parentFace.axisA, parentFace.axisB, parentFace.cornerPoint.clone().add(parentFace.axisA.clone().multiplyScalar(1/parentFace.lodLevel)).add(parentFace.axisB.clone().multiplyScalar(1/parentFace.lodLevel)), pLOD);
     return [face0, face1, face2, face3];
-}
-
-export function clearFaceData(face) {
-    face.uvs = [];
-    face.indices = [];
-    face.vertices = [];
-}
-
-onmessage = (e) => {
-    console.log("message recieved from main");
-    let startTime = new Date();
-    if(e.origin == '') {
-        let faceData = JSON.parse(e.data[0]);
-        let newFaces = splitFace(faceData, e.data[1], e.data[2]);
-        const parentFaceIndex = e.data[3]
-        // console.log(newFaces);
-        newFaces = JSON.parse(JSON.stringify(newFaces));
-        postMessage([newFaces, parentFaceIndex]);
-        let timeInonmessage = new Date() - startTime;
-        console.log("Time in worker: " + timeInonmessage);
-    }
-}
-
-class Vector3 {
-    constructor(x, y, z) {
-        this.x = x;
-        this.y = y;
-        this.z = z;
-    }
-
-    clone() {
-        return new Vector3(this.x, this.y, this.z);
-    }
-
-    add = function add(v) {
-        this.x += v.x;
-        this.y += v.y;
-        this.z += v.z;
-        return this;
-    }
-
-    multiplyScalar(n) {
-        this.x *= n;
-        this.y *= n;
-        this.z *= n;
-        return this;
-    }
 }

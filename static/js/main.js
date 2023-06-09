@@ -3,10 +3,8 @@
 import * as THREE from 'three';
 // import * as BufferGeometryUtils from 'BufferGeometryUtils';
 import { OrbitControls } from 'OrbitControls';
-import { Earth, jsonToFace, clearFaceData } from './earth.js';
+import { Earth, splitFace } from './earth.js';
 
-const worker = new Worker('./js/earth.js', {type:'module'});
-let workerBusy = false;
 // Loading
 const textureLoader = new THREE.TextureLoader();
 // const normalTexture = textureLoader.load('./imgs/normalMap16kFlat.jpg');
@@ -126,33 +124,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
 function increaseLOD(i) {
     console.log("increasing LOD of mesh " + i);
-    // clear face data to make json smaller as we dont need that data anymore
-    clearFaceData(earth.faces[i]);
-    let face = JSON.stringify(earth.faces[i]);
-
-    // const newFaces = []
-    // for(let i=0; i<4; i++) {
-    //     newFaces[i] = new PlanetFace();
-    // }
-
-    worker.postMessage([face, rad, res, i]);
-    workerBusy = true;
-    console.log("Message posted to worker");
-}
-
-worker.onmessage = (e) => {
-    console.log("message recieved from worker");
-    workerBusy = false;
-    let startTime = new Date();
-    // console.log(e);
-    const parentIndex = e.data[1];
-    const newFaces = [];
-    for(let k=0; k<4; k++) {
-        newFaces[k] = jsonToFace(e.data[0][k]);
-    }
-    let timeLoadingFaces = new Date() - startTime;
-    console.log("Time loading faces: " + timeLoadingFaces);
-    startTime = new Date();
+    const newFaces = splitFace(earth.faces[i], rad, res);
     const newGeometries = []
     const newMeshes = []
     for(let j=0; j<4; j++) {
@@ -165,13 +137,11 @@ worker.onmessage = (e) => {
         newMeshes[j] = new THREE.Mesh(newGeometries[j], earthMat);
         earthGroup.add(newMeshes[j]);
     }
-    let timeLoadingMeshes = new Date() - startTime;
 
-    console.log("Time creating meshes: " + timeLoadingMeshes);
     earth.faces = earth.faces.concat(newFaces);
-    earth.faces.splice(parentIndex);
-    earthGroup.remove(meshes[parentIndex])
-    meshes.splice(parentIndex)
+    earth.faces.splice(i);
+    earthGroup.remove(meshes[i])
+    meshes.splice(i)
     meshes = meshes.concat(newMeshes);
 }
 
@@ -180,7 +150,7 @@ function getCameraDist() {
 }
 
 function checkIncreaseLOD() {
-    if(getCameraDist() < 1.3 && !workerBusy) {
+    if(getCameraDist() < 1.3) {
         let closest = Infinity;
         let closeFace = -1;
         for(let i=0; i<earth.faces.length; i++) {
